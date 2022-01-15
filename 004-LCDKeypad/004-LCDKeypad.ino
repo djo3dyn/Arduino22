@@ -11,8 +11,6 @@
 // LCD Char
 char lcdLineOne[16];
 char lcdLineTwo[16];
-char printedLineOne[16];
-char printedLineTwo[16];
 
 // Millis
 unsigned long updateInterval = 100 ;
@@ -72,21 +70,6 @@ void updateDisplay()
 {
     if (menuMode != IDLE_MENU) return;
     if (currentWeigth != savedWeigth) updateWeigth() ;
-    
-    /*
-    if (strcmp(lcdLineOne , printedLineOne) != 0)
-    {
-        lcd.setCursor(0,0);
-        lcd.print(lcdLineOne);
-        strcpy(printedLineOne , lcdLineOne);
-    }
-    if (strcmp(lcdLineTwo , printedLineTwo) != 0)
-    {
-        lcd.setCursor(0,1);
-        lcd.print(lcdLineTwo);
-        strcpy(printedLineTwo , lcdLineTwo);
-    }
-    */
     
 }
 
