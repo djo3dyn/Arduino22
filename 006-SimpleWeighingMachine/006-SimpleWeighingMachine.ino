@@ -17,6 +17,8 @@ void setup()
     pinMode(AUT_PIN , INPUT_PULLUP);
     pinMode(MAN_PIN , INPUT_PULLUP);
 
+    closeValve();
+
 }
 
 void loop()

@@ -5,6 +5,8 @@
 #include "HX711.h"
 #include "motorvalve.h"
 
+#include "EEPROM.h"
+
 // Define Motor
 #define M_CW A1
 #define M_CCW A0
@@ -14,6 +16,15 @@
 // Load cell
 #define SCK_PIN 4
 #define DOUT_PIN 13
+
+// EEPROM Address
+#define SCALE_ADDR 0 // Float 4 bytes
+#define OFFSET_ADDR 4 // Long 8 bytes
+#define RAWOFFSET_ADDR 12 // Long 8 bytes
+#define TARGET_ADDR 20 // uint 4 bytes 
+#define OPPOS_ADDR 24 // int 4 bytes
+
+#define READ_EEPROM 0
 
 // Init
 void WeighingInit();

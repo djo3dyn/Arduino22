@@ -7,12 +7,14 @@
 #include "Keypad.h"
 #include "weighing.h"
 
+
 // Define menu mode
 #define M_IDLE 0
 #define M_INPUT 1
 #define M_ZERO 2
 #define M_FULL 3
 #define M_CAL 4
+#define M_CAL_TARE 5
 
 // Define keypad
 #define R1_PIN 12

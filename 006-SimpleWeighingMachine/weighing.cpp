@@ -7,7 +7,7 @@ HX711 scale;
 MotorValve motor(M_CW , M_CCW , ENC_A , ENC_B);
 int openPos;
 int closePos = 0;
-int targetWeigth;
+unsigned int targetWeigth;
 bool autoMode = false;
 
 // Weigthing function
@@ -15,6 +15,28 @@ void WeighingInit()
 {
     scale.begin(DOUT_PIN , SCK_PIN);
     motor.init();
+    
+#ifdef READ_EEPROM
+    // EEPROM Init scale :
+    float scaleDiv ;
+    EEPROM.get(SCALE_ADDR , scaleDiv);
+    setScale(scaleDiv);
+    
+
+    // EEPROM Init offset :
+    long offset ;
+    EEPROM.get(OFFSET_ADDR , offset);
+    scale.set_offset(offset);
+
+    //EEPROM Init targetWeigth
+    EEPROM.get(TARGET_ADDR , targetWeigth);
+
+    // EEPROM Init Open pos
+    int oposRead;
+    EEPROM.get(OPPOS_ADDR , oposRead);
+    openPos = oposRead;
+#endif
+    
 }
 
 long getRaw() 
@@ -35,6 +57,9 @@ float getScale()
 void setScale(float scl)
 { 
     scale.set_scale(scl);
+
+    // EEPROM Operation :
+    EEPROM.put(SCALE_ADDR , scl);
 }
 
 float getWeigth()
@@ -44,7 +69,11 @@ float getWeigth()
 
 void setTare()
 {
-    scale.tare();
+    scale.set_offset(scale.read());
+    
+    // EEPROM Operation :
+    EEPROM.put(OFFSET_ADDR , scale.get_offset());
+
 }
 void setTargetWeigth(int target)
 {
@@ -73,6 +102,9 @@ void setOpenPos()
 {
     openPos = motor.currentPosition;
     motor.setOpenPosition(motor.currentPosition);
+
+    // EEPROM Operation :
+    EEPROM.put(OPPOS_ADDR , openPos);
 }
 
 void openValve()
