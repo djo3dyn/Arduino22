@@ -3,7 +3,7 @@
 // Weigthing
 float currentWeigth ;
 float savedWeigth ;
-int setWeigth ;
+unsigned int setWeigth ;
 float divider ;
 long rawOffset;
 
@@ -13,6 +13,7 @@ int menuMode ;
 // LCD Char
 char lcdLineOne[16];
 char lcdLineTwo[16];
+int charPos = 0;
 
 // Keypad
 const byte ROWS = 4; //four rows
@@ -31,13 +32,12 @@ LiquidCrystal_I2C lcd(0x27,16,2);
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 void displayWeigth()
-{
-     
+{    
     lcd.noBlink();
     lcd.setCursor(0,0);
     lcd.print("Berat (gr) :       ");
     lcd.setCursor(0,1);
-    lcd.print("               ");
+    lcd.print("                ");
     lcd.setCursor(0,1);
     lcd.print(currentWeigth , 0);
     savedWeigth = currentWeigth;
@@ -75,14 +75,32 @@ void displayInit()
 
     displayWeigth();
     keypad.addEventListener(keypadEvent); // Add an event listener for this keypad
+
+#ifdef READ_EEPROM
+    //EEPROM Init targetWeigth
+    EEPROM.get(TARGET_ADDR , setWeigth);
+    EEPROM.get(RAWOFFSET_ADDR , rawOffset);
+#endif
+
 }
 
 int getMode() { return menuMode;}
 
+void inputChar(char c)
+{
+    lcdLineTwo[charPos] = c;
+    charPos++;
+}
+
+void clearInput()
+{
+    memset(lcdLineTwo , 0 , 16);
+    charPos = 0 ;  
+}
+
 void updateDisplay()
 {
     currentWeigth = getWeigth();
-    //Serial.println(getRaw());
     if (menuMode != M_IDLE) return;
     if (currentWeigth != savedWeigth) displayWeigth() ;
     
@@ -106,29 +124,24 @@ void keyDecode(char key)
                 lcd.setCursor(0,1);
                 lcd.print(setWeigth);
                 lcd.blink();
-                strcpy(lcdLineTwo , "");
+                // Set input
+                clearInput();
                 itoa(setWeigth , lcdLineTwo , 10);
             }
             else if (key == 'B')
             {
                 // Set Tare
                 setTare();
-                rawOffset = getOffset() * getScale();
             }
             else if (key == 'C')
             {
-                menuMode = M_CAL;
+                menuMode = M_CAL_TARE;
                 // Print header text
                 lcd.setCursor(0,0);
-                lcd.print("Kalibrasi (gr) : ");
+                lcd.print("Kalb. (0 gr) :  ");
                 // Print input text
                 lcd.setCursor(0,1);
-                lcd.print("               ");
-                lcd.setCursor(0,1);
-                lcd.print(currentWeigth , 0);
-                lcd.blink();
-                strcpy(lcdLineTwo , "");
-                itoa(currentWeigth , lcdLineTwo , 10);   
+                lcd.print("                ");
             }
             else if (key == 'D')
             {
@@ -138,17 +151,11 @@ void keyDecode(char key)
                 lcd.print("Set Pos. tutup :");
                 // Print input text
                 lcd.setCursor(0,1);
-                lcd.print("               ");
+                lcd.print("                ");
                 lcd.setCursor(0,1);
                 lcd.print("Tekan (# , *)");
                 closeValve();
-            }
-            // test
-            else if (key == '1')
-            {
-                goToPos(100);
-            }
-            
+            }  
         }
         break;
         // Input weigth menu
@@ -158,8 +165,8 @@ void keyDecode(char key)
             {
                 lcd.print(key);
                 // Append number
-                char buff[1] = {key};
-                strcat(lcdLineTwo , buff);    
+                inputChar(key);
+
             }
             else if (key == 'A') // Cancel
             {    
@@ -171,7 +178,7 @@ void keyDecode(char key)
                 lcd.setCursor(0,1);
                 lcd.print("               ");
                 lcd.setCursor(0,1);
-                strcpy(lcdLineTwo , "");
+                clearInput();
             }
             else if (key == 'D') // OK
             {
@@ -184,8 +191,44 @@ void keyDecode(char key)
                     // Go to Idle
                     menuMode = M_IDLE;
                     displayWeigth();
+
+                    //EEPROM Operation :
+                    EEPROM.put(TARGET_ADDR , setWeigth);
+
+                    clearInput();
                     
                 }     
+            }
+        }
+        break;
+        case M_CAL_TARE: // Calibration menu tare
+        {
+            if (key == 'A') // Cancel
+            {    
+                menuMode = M_IDLE;   
+                displayWeigth();         
+            }
+            else if (key == 'D') // OK
+            {
+                setScale(1.f);
+                setTare();
+                rawOffset = getOffset() * getScale();
+
+                // go to cal unit
+                menuMode = M_CAL;
+                // Print header text
+                lcd.setCursor(0,0);
+                lcd.print("Kalb. (n gr) :  ");
+                // Print input text
+                lcd.setCursor(0,1);
+                lcd.print("                ");
+                lcd.setCursor(0,1);
+                lcd.print(currentWeigth , 0);
+                lcd.blink();
+                
+                clearInput();
+                itoa(currentWeigth , lcdLineTwo , 10);
+
             }
         }
         break;
@@ -195,12 +238,11 @@ void keyDecode(char key)
             {
                 lcd.print(key);
                 // Append number
-                char buff[1] = {key};
-                strcat(lcdLineTwo , buff);    
+                inputChar(key);    
             }
             else if (key == 'A') // Cancel
             {    
-                menuMode = M_IDLE;   
+                menuMode = M_IDLE;  
                 displayWeigth();         
             }
             else if (key == 'C') // Clear
@@ -208,7 +250,7 @@ void keyDecode(char key)
                 lcd.setCursor(0,1);
                 lcd.print("               ");
                 lcd.setCursor(0,1);
-                strcpy(lcdLineTwo , "");
+                clearInput();
             }
             else if (key == 'D') // OK
             {
@@ -216,11 +258,26 @@ void keyDecode(char key)
                 int temp = atoi(lcdLineTwo);
                 if (temp <= 20000 && temp > 0)
                 {
-                    divider = (getRaw() - rawOffset) / (float)temp;
+                    divider = (getRaw() - rawOffset) / (float) temp;
                     setScale(divider);
                     // Go to Idle
                     menuMode = M_IDLE;
-                    displayWeigth(); 
+                    displayWeigth();   
+                   
+#ifdef DEBUG_MODE
+                    // Debug
+                    Serial.print("Raw Read : ");
+                    Serial.println(getRaw());
+                    Serial.print("Raw Offset : ");
+                    Serial.println(rawOffset);
+                    Serial.print("Raw Input : ");
+                    Serial.println(lcdLineTwo);
+                    Serial.print("Input : ");
+                    Serial.println(temp);
+                    Serial.print("Divider : ");
+                    Serial.println(divider , 6);
+#endif
+                    clearInput();
                 }     
             }
         }
