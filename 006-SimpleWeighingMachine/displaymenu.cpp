@@ -14,16 +14,27 @@ int menuMode ;
 char lcdLineOne[16];
 char lcdLineTwo[16];
 int charPos = 0;
+int savedLength;
 
 // Keypad
 const byte ROWS = 4; //four rows
 const byte COLS = 4; //four columns
+
+#if SIMULATION
 char keys[ROWS][COLS] = {   
     {'7','8','9','A'},
     {'4','5','6','B'},
     {'1','2','3','C'},
     {'*','0','#','D'}    
 };
+#else
+char keys[ROWS][COLS] = {   
+    {'1','2','3','A'},
+    {'4','5','6','B'},
+    {'7','8','9','C'},
+    {'*','0','#','D'}    
+};
+#endif
 byte rowPins[ROWS] = {R1_PIN, R2_PIN, R3_PIN, R4_PIN}; //connect to the row pinouts of the keypad
 byte colPins[COLS] = {C1_PIN, C2_PIN, C3_PIN, C4_PIN}; //connect to the column pinouts of the keypad
 
@@ -32,14 +43,17 @@ LiquidCrystal_I2C lcd(0x27,16,2);
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 void displayWeigth()
-{    
+{   
+    char s[16];
+    int i = round(currentWeigth);
+    //itoa(i, s , 10);
     lcd.noBlink();
     lcd.setCursor(0,0);
     lcd.print("Berat (gr) :       ");
     lcd.setCursor(0,1);
+    lcd.print(i);
     lcd.print("                ");
-    lcd.setCursor(0,1);
-    lcd.print(currentWeigth , 0);
+    //savedLength = strlen(s);
     savedWeigth = currentWeigth;
 }
 
@@ -102,7 +116,9 @@ void updateDisplay()
 {
     currentWeigth = getWeigth();
     if (menuMode != M_IDLE) return;
-    if (currentWeigth != savedWeigth) displayWeigth() ;
+    int current = round(currentWeigth);
+    int saved = round(savedWeigth);
+    if (current != saved ) displayWeigth() ;
     
 }
 
@@ -205,7 +221,8 @@ void keyDecode(char key)
         {
             if (key == 'A') // Cancel
             {    
-                menuMode = M_IDLE;   
+                menuMode = M_IDLE; 
+                lcd.clear();  
                 displayWeigth();         
             }
             else if (key == 'D') // OK
@@ -242,7 +259,8 @@ void keyDecode(char key)
             }
             else if (key == 'A') // Cancel
             {    
-                menuMode = M_IDLE;  
+                menuMode = M_IDLE;
+                lcd.clear(); 
                 displayWeigth();         
             }
             else if (key == 'C') // Clear
@@ -264,7 +282,7 @@ void keyDecode(char key)
                     menuMode = M_IDLE;
                     displayWeigth();   
                    
-#ifdef DEBUG_MODE
+#if DEBUG_MODE
                     // Debug
                     Serial.print("Raw Read : ");
                     Serial.println(getRaw());
@@ -286,7 +304,8 @@ void keyDecode(char key)
         {
             if (key == 'A') // Cancel
             {    
-                menuMode = M_IDLE;   
+                menuMode = M_IDLE; 
+                lcd.clear();  
                 displayWeigth();         
             }
             else if (key == 'D') 
@@ -310,13 +329,15 @@ void keyDecode(char key)
         {
             if (key == 'A') // Cancel
             {    
-                menuMode = M_IDLE;   
+                menuMode = M_IDLE; 
+                lcd.clear();  
                 displayWeigth();         
             }
             else if (key == 'D') 
             {
                 setOpenPos();
                 closeValve();
+                lcd.clear();
                 displayWeigth(); 
                 menuMode = M_IDLE;
             }

@@ -5,7 +5,7 @@
 #define AUT_PIN A3
 
 // Millis
-unsigned long updateInterval = 100 ;
+unsigned long updateInterval = 250 ;
 unsigned long savedMillis ;
 bool autoReq = false;
 void setup()
@@ -26,6 +26,7 @@ void loop()
     // Main button operation
     if (getMode()== M_IDLE)
     {
+        
         if (!digitalRead(AUT_PIN) && !isReachTarget())
         {
             startAuto();
@@ -37,6 +38,7 @@ void loop()
             autoReq = false;
         }
         else if (digitalRead(MAN_PIN) && !autoReq) closeValve();
+        
     }
     // Keypad operation
     keypadHandle();

@@ -24,7 +24,12 @@
 #define TARGET_ADDR 20 // uint 4 bytes 
 #define OPPOS_ADDR 24 // int 4 bytes
 
-#define READ_EEPROM 0
+#define READ_EEPROM 1
+#define SIMULATION 0
+#define DEBUG_MODE 1
+
+#define UP_TOL 2.F
+#define POS_TOL 10
 
 // Init
 void WeighingInit();
@@ -49,5 +54,6 @@ void startAuto();
 void openValve();
 void closeValve();
 bool motorHandle();
+int getCurrentPos();
 
 #endif

@@ -16,12 +16,11 @@ void WeighingInit()
     scale.begin(DOUT_PIN , SCK_PIN);
     motor.init();
     
-#ifdef READ_EEPROM
+#if READ_EEPROM
     // EEPROM Init scale :
     float scaleDiv ;
     EEPROM.get(SCALE_ADDR , scaleDiv);
     setScale(scaleDiv);
-    
 
     // EEPROM Init offset :
     long offset ;
@@ -84,6 +83,11 @@ void setTargetWeigth(int target)
 void startMotor(bool ccw)
 {
     motor.start(ccw);
+    //motor.currentPosition;
+#if DEBUG_MODE
+    int pos = motor.currentPosition;
+    Serial.println(pos);
+#endif
 }
 
 void stopMotor()
@@ -107,14 +111,27 @@ void setOpenPos()
     EEPROM.put(OPPOS_ADDR , openPos);
 }
 
+bool isClosed()
+{
+    if (motor.currentPosition <= 0 ) return true;
+    else return false;
+}
+
+bool isOpen()
+{
+    if (motor.currentPosition >= openPos  ) return true;
+    else return false;
+}
+
 void openValve()
 {
-    motor.goToPosition(openPos);
+    if (!isOpen()) motor.goToPosition(openPos);
 }
 
 void closeValve()
 {
-    motor.goToPosition(0);
+    
+    if(!isClosed()) motor.goToPosition(0);
 }
 
 void goToPos(int pos)
@@ -133,6 +150,11 @@ bool isReachTarget()
 {
     if (getWeigth() >= targetWeigth) return true;
     else return false;
+}
+
+int getCurrentPos()
+{
+    
 }
 
 bool motorHandle()
