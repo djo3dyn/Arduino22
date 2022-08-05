@@ -3,6 +3,10 @@
 
 #include "arduino.h"
 
+#define S_STOP 0
+#define S_CW 1
+#define S_CCW 2
+
 class MotorValve
 {
     public :
@@ -18,6 +22,9 @@ class MotorValve
         void stop();
 
         volatile int currentPosition ;
+        bool isRun;
+        int getStatus();
+        void resetError();
     
     private :
         // Interrupt Handler variable
@@ -29,13 +36,19 @@ class MotorValve
         int cwPin, ccwPin, encbPin, encaPin;
         
         // Motor Position
+        
         int targetPosition ;
+        int prevPosition;
 
         // Set point value
         bool posRequested ;
         bool autoPos ;
         int openPosition ;
         int closedPosition;
+
+        // Motor Status
+        int motorStatus;
+        int errorCode;
 };
 
 #endif

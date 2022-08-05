@@ -22,6 +22,10 @@ void MotorValve::init()
     
     attachInterrupt(encaPin , ISR_readEncoder , RISING);
     instance0 = this;
+    isRun = false;
+    errorCode = 0;
+    motorStatus = S_STOP;
+    prevPosition = 0;
 }
 
 
@@ -37,17 +41,25 @@ void MotorValve::setOpenPosition(int pos)
 
 void MotorValve::start(bool ccw)
 {
+    if (errorCode > 0)
+    {
+        isRun = false;
+        motorStatus = S_STOP;
+        return;
+    }
     if (ccw)
     {
         digitalWrite(ccwPin , HIGH);
         digitalWrite(cwPin , LOW);
+        motorStatus = S_CCW;
     }
     else
     {
         digitalWrite(ccwPin , LOW);
         digitalWrite(cwPin , HIGH);
+        motorStatus = S_CW;
     }
-
+    isRun = true;
 }
 
 void MotorValve::stop()
@@ -55,6 +67,8 @@ void MotorValve::stop()
     digitalWrite(cwPin , LOW);
     digitalWrite(ccwPin , LOW);
     posRequested = false;
+    isRun = false;
+    motorStatus = S_STOP;
 
 }
 
@@ -100,4 +114,30 @@ void MotorValve::handleInterrupt()
         currentPosition++;
         if (posRequested && (currentPosition >= targetPosition)) stop();
     }
+}
+
+int MotorValve::getStatus()
+{
+    if (errorCode == 0 && motorStatus == S_CW)
+    {
+        if (currentPosition < prevPosition) errorCode = 2;
+        else if (currentPosition == prevPosition) errorCode = 1;
+        else errorCode = 0;
+        prevPosition = currentPosition;
+    }
+    else if (errorCode == 0 && motorStatus == S_CCW)
+    {
+        if (currentPosition > prevPosition) errorCode = 2;
+        else if (currentPosition == prevPosition) errorCode = 1;
+        else errorCode = 0;
+        prevPosition = currentPosition;
+    }
+
+    if (errorCode > 0) stop();
+    return errorCode;
+}
+
+void MotorValve::resetError()
+{
+    errorCode = 0;
 }

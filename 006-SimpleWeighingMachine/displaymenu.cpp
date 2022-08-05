@@ -49,12 +49,22 @@ void displayWeigth()
     //itoa(i, s , 10);
     lcd.noBlink();
     lcd.setCursor(0,0);
-    lcd.print("Berat (gr) :       ");
-    lcd.setCursor(0,1);
-    lcd.print(i);
-    lcd.print("                ");
-    //savedLength = strlen(s);
-    savedWeigth = currentWeigth;
+    // Start update display
+    if (getErrorCode() == 0)
+    {
+        lcd.print("Berat (gr) :       ");
+        lcd.setCursor(0,1);
+        lcd.print(i);
+        lcd.print("                ");
+    }
+    else if (getErrorCode() > 0)
+    {
+        lcd.print("Error!          ");
+        lcd.setCursor(0,1);
+        lcd.print("Code : ");
+        lcd.print(getErrorCode());
+        lcd.print("                ");
+    }
 }
 
 void keypadEvent(KeypadEvent key)
@@ -71,9 +81,30 @@ void keypadEvent(KeypadEvent key)
             case RELEASED:
                 if (key == '#' || key == '*' )stopMotor();
                 break;
+            
         }
 
     }
+    else if (menuMode == M_IDLE)
+    {
+        
+        switch (state)
+        {
+            case HOLD:
+                if(key == 'D') resetError();
+                updateErrorCode();
+                Serial.println("Reset Error");
+                break;
+            case PRESSED:
+                break;
+            case RELEASED:
+                break;
+            
+            
+        }
+
+    }
+    
 }
 
 void displayInit()
@@ -124,6 +155,8 @@ void updateDisplay()
 
 void keyDecode(char key)
 {
+    if (getErrorCode() > 0) return;
+
     switch (menuMode)
     {
         case M_IDLE:

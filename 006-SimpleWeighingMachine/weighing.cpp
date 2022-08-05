@@ -7,8 +7,12 @@ HX711 scale;
 MotorValve motor(M_CW , M_CCW , ENC_A , ENC_B);
 int openPos;
 int closePos = 0;
+int savedPos ;
 unsigned int targetWeigth;
 bool autoMode = false;
+byte errorCode = 0;
+
+
 
 // Weigthing function
 void WeighingInit()
@@ -83,7 +87,7 @@ void setTargetWeigth(int target)
 void startMotor(bool ccw)
 {
     motor.start(ccw);
-    //motor.currentPosition;
+    //triggerMillis = millis();
 #if DEBUG_MODE
     int pos = motor.currentPosition;
     Serial.println(pos);
@@ -152,29 +156,43 @@ bool isReachTarget()
     else return false;
 }
 
+bool motorIsRun()
+{
+    return motor.isRun;
+}
+
 int getCurrentPos()
 {
     
 }
 
-bool motorHandle()
+void updateErrorCode()
 {
-    if (autoMode)
+    errorCode = motor.getStatus();
+}
+
+int getErrorCode()
+{
+    return errorCode;
+}
+
+void resetError()
+{
+    motor.resetError();
+}
+
+void motorHandle()
+{
+    //check motor run
+    if (!motor.isRun) return;
+
+    // Check Target
+    if (autoMode && isReachTarget())
     {
-        if (isReachTarget())
-        {
-            closeValve();
-            autoMode = false;
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        closeValve();
+        autoMode = false;      
     }
-    else
-    {
-        return false;;
-    }
+
     
 }
+    

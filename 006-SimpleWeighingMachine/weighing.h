@@ -26,7 +26,7 @@
 
 #define READ_EEPROM 1
 #define SIMULATION 0
-#define DEBUG_MODE 1
+#define DEBUG_MODE 0
 
 #define UP_TOL 2.F
 #define POS_TOL 10
@@ -53,7 +53,11 @@ void setOpenPos();
 void startAuto();
 void openValve();
 void closeValve();
-bool motorHandle();
+void motorHandle();
 int getCurrentPos();
+int getErrorCode();
+void updateErrorCode();
+void resetError();
+bool motorIsRun();
 
 #endif
